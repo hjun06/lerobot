@@ -1,0 +1,238 @@
+# EarthRover Mini Plus
+
+<img
+  src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/lerobot/Earth_Rover_Mini_5_240c9adc-4f9e-44b7-982f-5d1dc24af1d8.png.webp"
+  alt="EarthRover Mini Plus"
+  width="70%"
+/>
+
+EarthRover Mini Plus는 Frodobots SDK를 사용하여 클라우드(cloud)를 통해 연결되는 완전한 오픈 소스(open source) 모바일 로봇(mobile robot)입니다. 이를 통해 로봇을 제어하고 AI 모델 학습을 위한 데이터셋(dataset)을 기록할 수 있습니다.
+
+## 필요한 사항
+
+### 하드웨어
+
+- EarthRover Mini 로봇
+- Python 3.12 이상이 설치된 컴퓨터
+- 인터넷 연결
+
+### Frodobots SDK 설정
+
+로봇을 사용하려면 컴퓨터에서 [Frodobots SDK](https://github.com/frodobots-org/earth-rovers-sdk)가 실행 중이어야 합니다. 방법은 다음과 같습니다.
+
+1. SDK를 다운로드하고 설치하십시오.
+
+```bash
+git clone https://github.com/frodobots-org/earth-rovers-sdk.git
+cd earth-rovers-sdk
+pip install -r requirements.txt
+```
+
+2. 자격 증명(Credentials)을 저장하십시오.
+
+Frodobots 팀에서 제공한 SDK API 키와 봇 이름을 사용하여 .env 변수를 작성하십시오.
+
+```bash
+SDK_API_TOKEN=your_sdk_api_token_here
+BOT_SLUG=your_bot_slug_here
+CHROME_EXECUTABLE_PATH=/path/to/chrome_or_chromium
+# 기본값은 MAP_ZOOM_LEVEL=18입니다. https://wiki.openstreetmap.org/wiki/Zoom_levels
+MAP_ZOOM_LEVEL=18
+MISSION_SLUG=your_mission_slug_here
+# 이미지 품질은 0.1에서 1.0 사이입니다(기본값: 0.8).
+# 권장값: 성능 향상을 위해 0.8
+IMAGE_QUALITY=0.8
+# 이미지 형식: jpeg, png 또는 webp(기본값: png)
+# 권장값: 성능 향상과 대역폭 사용량 감소를 위해 jpeg
+IMAGE_FORMAT=jpeg
+```
+
+3. SDK를 시작하십시오.
+
+```bash
+hypercorn main:app --reload
+```
+
+4. 웹 브라우저를 열고 `http://localhost:8000`으로 이동한 다음 "Join"을 클릭하십시오.
+
+SDK는 다음을 제공합니다.
+
+- 전면 및 후면 카메라의 라이브 비디오(live video)
+
+> [!IMPORTANT]
+> 로봇을 사용하려면 먼저 SDK가 실행 중이어야 합니다.
+
+## LeRobot 설치
+
+LeRobot을 설치하려면 [Installation Guide](./installation)를 따르십시오.
+
+기본 설치에 더해, 하드웨어 의존성(dependencies)을 포함하여 EarthRover Mini를 설치하십시오.
+
+```bash
+pip install -e ".[hardware]"
+```
+
+## 작동 방식
+
+로봇은 인터넷을 사용하여 통신합니다.
+
+- **이동 명령**: SDK를 통해 전송됩니다.
+- **카메라 비디오**: SDK에서 수신됩니다.
+- **로봇 정보**: 배터리, 위치, 속도가 SDK에서 제공됩니다.
+
+아무것도 직접 연결하거나 꽂을 필요가 없습니다. 모든 것은 SDK를 통해 작동합니다.
+
+## 캘리브레이션
+
+캘리브레이션(calibration)은 필요하지 않습니다. SDK가 실행되는 즉시 로봇을 사용할 수 있습니다.
+
+## 로봇 제어
+
+키보드를 사용하여 로봇을 제어합니다. WASD 키로 비디오 게임을 하는 것과 똑같습니다.
+
+### 키보드 제어
+
+| 키  | 동작                         |
+| --- | ---------------------------- |
+| W   | 앞으로 이동                  |
+| S   | 뒤로 이동                    |
+| A   | 왼쪽으로 회전(전진 동작 포함) |
+| D   | 오른쪽으로 회전(전진 동작 포함) |
+| Q   | 제자리에서 왼쪽으로 회전     |
+| E   | 제자리에서 오른쪽으로 회전   |
+| X   | 모든 움직임 정지             |
+| +/= | 속도 증가                    |
+| -   | 속도 감소                    |
+| ESC | 연결 해제                    |
+
+### 속도 설정
+
+로봇이 움직이는 속도를 조정할 수 있습니다.
+
+- **전진/후진 속도**: 기본값은 최고 속도(1.0)입니다.
+- **회전 속도**: 기본값은 최고 속도(1.0)입니다.
+- **속도 변경**: +/- 키를 사용하여 매번 0.1씩 조정합니다.
+
+### 직접 시도하기
+
+데이터를 기록하기 전에 로봇을 시험 주행하십시오.
+
+```python
+from lerobot.robots.earthrover_mini_plus import EarthRoverMiniPlus, EarthRoverMiniPlusConfig
+from lerobot.teleoperators.keyboard import KeyboardRoverTeleop, KeyboardRoverTeleopConfig
+
+# 로봇을 초기화합니다.
+robot_config = EarthRoverMiniPlusConfig()
+robot = EarthRoverMiniPlus(robot_config)
+
+# 원격 조작기를 초기화합니다.
+teleop_config = KeyboardRoverTeleopConfig(
+    linear_speed=1.0,
+    angular_speed=1.0,
+    speed_increment=0.1
+)
+teleop = KeyboardRoverTeleop(teleop_config)
+
+# 연결합니다.
+robot.connect()
+teleop.connect()
+
+# 원격 조작을 수행합니다(키보드 제어 사용).
+try:
+    while True:
+        action = teleop.get_action()
+        robot.send_action(action)
+except KeyboardInterrupt:
+    pass
+finally:
+    robot.disconnect()
+    teleop.disconnect()
+```
+
+> [!TIP]
+> Mac을 사용하는 경우 원격 조작(teleoperation)을 위해 Terminal에 키보드 접근 권한을 부여해야 할 수 있습니다. System Preferences > Security & Privacy > Input Monitoring으로 이동한 뒤 Terminal 항목의 체크박스를 선택하십시오.
+
+## 데이터 기록
+
+로봇을 잘 주행할 수 있게 되면 AI 모델을 학습시키기 위한 데이터 기록을 시작할 수 있습니다. 시스템은 다음을 기록합니다.
+
+- **사용자의 동작**: 로봇을 어떻게 움직이는지(전진, 후진, 회전)
+- **로봇이 보는 것**:
+  - 두 카메라의 비디오
+  - 로봇의 속도와 방향
+  - 배터리 잔량과 위치
+  - GPS 위치와 신호
+  - 기타 센서(sensor) 데이터
+- **발생 시점**: 모든 항목의 타임스탬프(timestamp)
+
+### Hugging Face 설정
+
+데이터를 온라인에 저장하기 위해 Hugging Face를 사용합니다. 먼저 [Hugging Face settings](https://huggingface.co/settings/tokens)에서 받은 토큰(token)으로 로그인하십시오.
+
+```bash
+hf auth login --token ${HUGGINGFACE_TOKEN} --add-to-git-credential
+```
+
+Hugging Face 사용자 이름을 저장하십시오.
+
+```bash
+HF_USER=$(hf auth whoami | awk -F': *' 'NR==1 {print $2}')
+echo $HF_USER
+```
+
+### 기록 시작
+
+표준 기록 명령을 사용하십시오.
+
+```bash
+lerobot-record \
+    --robot.type=earthrover_mini_plus \
+    --teleop.type=keyboard_rover \
+    --dataset.repo_id=your_username/dataset_name \
+    --dataset.num_episodes=2 \
+    --dataset.fps=10 \
+    --dataset.single_task="Navigate around obstacles" \
+    --dataset.streaming_encoding=true \
+    --dataset.encoder_threads=2 \
+    # --dataset.vcodec=auto \
+    --display_data=true
+```
+
+`your_username/dataset_name`을 Hugging Face 사용자 이름과 데이터셋 이름으로 바꾸십시오.
+
+### 저장되는 항목
+
+데이터셋에는 다음이 포함됩니다.
+
+**사용자 동작(2개 feature)**:
+
+- `linear_velocity`: 전진/후진으로 이동한 정도
+- `angular_velocity`: 왼쪽/오른쪽으로 회전한 정도
+
+**로봇 관측값(Robot Observations, 24개 feature)**:
+
+- 전면 카메라 비디오
+- 후면 카메라 비디오
+- 현재 속도
+- 배터리 잔량
+- 방향(orientation)
+- GPS(위도, 경도, 신호 강도)
+- 네트워크 신호 강도
+- 진동 수준
+- 램프 상태(켜짐/꺼짐)
+- 가속도계(accelerometer)(x, y, z)
+- 자이로스코프(gyroscope)(x, y, z)
+- 자력계(magnetometer)(x, y, z)
+- 바퀴 RPM(바퀴 4개)
+
+### 데이터 저장 위치
+
+컴퓨터 내 위치: `~/.cache/huggingface/lerobot/{repo-id}`
+
+기록 후에는 데이터가 Hugging Face 페이지에 자동으로 업로드됩니다.
+
+```bash
+echo https://huggingface.co/datasets/${HF_USER}/earthrover-navigation
+```
+
+데이터셋에는 커뮤니티 검색을 위해 `LeRobot` 태그가 지정됩니다.
